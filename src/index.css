@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'VT323';
+  src: url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+}
+
+body {
+  background: #000;
+  min-height: 100vh;
+  margin: 0;
+  font-family: 'VT323', monospace;
+  color: #00ff00;
+}
+
+.retro-border {
+  border: 2px solid #00ff00;
+  box-shadow: 0 0 10px #00ff00, inset 0 0 10px #00ff00;
+}
+
+.retro-text {
+  text-shadow: 0 0 5px #00ff00;
+}
+
+.retro-glow {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  from {
+    text-shadow: 0 0 5px #00ff00, 0 0 10px #00ff00, 0 0 15px #00ff00;
+  }
+  to {
+    text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00;
+  }
+}
+
+.crt::before {
+  content: " ";
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+  z-index: 100;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #001100;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00ff00;
+  border-radius: 4px;
+  box-shadow: 0 0 5px #00ff00;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00cc00;
+}
+
+.terminal-input {
+  background: #001100;
+  border: 1px solid #00ff00;
+  color: #00ff00;
+  font-family: 'VT323', monospace;
+  padding: 8px;
+}
+
+.terminal-input:focus {
+  outline: none;
+  box-shadow: 0 0 5px #00ff00;
+}
+
+@keyframes takeoff {
+  0% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(-10px) rotate(15deg);
+  }
+  100% {
+    transform: translateY(-20px) rotate(30deg) translateX(20px);
+  }
+}
+
+.animate-takeoff {
+  animation: takeoff 2s ease-in-out forwards;
+}
+
+.animate-spin-slow {
+  animation: spin 3s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
