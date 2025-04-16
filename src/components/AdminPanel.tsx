@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Trash2, Check, X, Eye, AlertCircle, Heart } from 'lucide-react';
+import { Shield, Trash2, Check, X, Eye, AlertCircle, Heart, Search, Filter, ArrowUpDown } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
 
@@ -19,6 +19,9 @@ export default function AdminPanel() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedEntry, setSelectedEntry] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'date' | 'views' | 'likes'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
     checkAdmin();
@@ -94,6 +97,34 @@ export default function AdminPanel() {
     }
   }
 
+  const handleSort = (newSortBy: 'date' | 'views' | 'likes') => {
+    if (newSortBy === sortBy) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(newSortBy);
+      setSortOrder('desc');
+    }
+  };
+
+  const filteredEntries = entries
+    .filter(entry => 
+      entry.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      entry.user_id.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      const multiplier = sortOrder === 'asc' ? 1 : -1;
+      switch (sortBy) {
+        case 'date':
+          return multiplier * (new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        case 'views':
+          return multiplier * ((a.views || 0) - (b.views || 0));
+        case 'likes':
+          return multiplier * ((a.likes || 0) - (b.likes || 0));
+        default:
+          return 0;
+      }
+    });
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 
@@ -105,15 +136,15 @@ export default function AdminPanel() {
   };
 
   const entryVariants = {
-    hidden: { opacity: 0, x: -20 },
+    hidden: { opacity: 0, y: 20 },
     visible: { 
       opacity: 1, 
-      x: 0,
+      y: 0,
       transition: { duration: 0.3 }
     },
     exit: { 
       opacity: 0,
-      x: 20,
+      y: -20,
       transition: { duration: 0.2 }
     }
   };
@@ -121,19 +152,9 @@ export default function AdminPanel() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <motion.div
-          animate={{ 
-            scale: [1, 1.2, 1],
-            rotate: [0, 180, 360]
-          }}
-          transition={{ 
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        >
-          <Shield className="w-8 h-8 text-green-400" />
-        </motion.div>
+        <div className="loading">
+          <div></div>
+        </div>
       </div>
     );
   }
@@ -141,32 +162,74 @@ export default function AdminPanel() {
   if (!isAdmin) {
     return (
       <div className="max-w-md mx-auto mt-20">
-        <motion.div 
-          className="retro-border p-8 rounded-lg"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-2xl font-bold mb-6 retro-text flex items-center gap-2">
-            <AlertCircle className="text-red-500" />
+        <div className="card text-center">
+          <h1 className="text-2xl font-bold mb-6 retro-text flex items-center justify-center gap-2">
+            <AlertCircle className="text-error" />
             Access Denied
           </h1>
-          <p className="mb-4 text-green-400">Administrator access is required.</p>
-        </motion.div>
+          <p className="text-text-secondary">Administrator access is required.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <motion.h1 
-        className="text-3xl font-bold mb-8 retro-text flex items-center gap-2"
-        initial={{ opacity: 0, y: -20 }}
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
+        className="mb-12 text-center"
       >
-        <Shield />
-        Admin Panel
-      </motion.h1>
+        <h1 className="text-5xl font-bold mb-4 retro-text">
+          <Shield className="inline-block mr-3 float" size={40} />
+          Admin Panel
+        </h1>
+        <p className="text-text-secondary">Manage diary entries and user content</p>
+      </motion.div>
+
+      <div className="mb-8 space-y-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="🔍 Search entries..."
+              className="w-full terminal-input rounded-xl px-6 py-3 text-lg"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => handleSort('date')}
+            className={`button-secondary ${
+              sortBy === 'date' ? 'bg-primary text-background' : ''
+            }`}
+          >
+            <ArrowUpDown size={18} className="mr-2" />
+            Date {sortBy === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
+          </button>
+          <button
+            onClick={() => handleSort('views')}
+            className={`button-secondary ${
+              sortBy === 'views' ? 'bg-primary text-background' : ''
+            }`}
+          >
+            <Eye size={18} className="mr-2" />
+            Views {sortBy === 'views' && (sortOrder === 'asc' ? '↑' : '↓')}
+          </button>
+          <button
+            onClick={() => handleSort('likes')}
+            className={`button-secondary ${
+              sortBy === 'likes' ? 'bg-primary text-background' : ''
+            }`}
+          >
+            <Heart size={18} className="mr-2" />
+            Likes {sortBy === 'likes' && (sortOrder === 'asc' ? '↑' : '↓')}
+          </button>
+        </div>
+      </div>
 
       <motion.div 
         className="space-y-6"
@@ -175,56 +238,66 @@ export default function AdminPanel() {
         animate="visible"
       >
         <AnimatePresence>
-          {entries.map((entry) => (
+          {filteredEntries.map((entry) => (
             <motion.div
               key={entry.id}
               variants={entryVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="retro-border p-6 rounded-lg"
+              className="card group"
             >
               <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="text-xs text-green-600">{entry.user_id}</p>
-                  <p className="text-xs text-green-700">
-                    {new Date(entry.created_at).toLocaleString()}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <div className="flex items-center gap-4 mr-4 text-green-600">
-                    <div className="flex items-center gap-1">
-                      <Eye size={16} />
-                      <span>{entry.views || 0}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Heart size={16} />
-                      <span>{entry.likes || 0}</span>
-                    </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="badge">
+                      {new Date(entry.created_at).toLocaleString()}
+                    </span>
+                    <span className="badge">
+                      <Filter size={14} className="mr-1" />
+                      {entry.user_id}
+                    </span>
                   </div>
-                  <motion.button
-                    onClick={() => handleTogglePublic(entry.id, entry.is_public)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className={`p-2 rounded ${
-                      entry.is_public ? 'bg-green-700' : 'bg-gray-700'
-                    }`}
-                    disabled={selectedEntry === entry.id}
-                  >
-                    {entry.is_public ? <Check size={16} /> : <X size={16} />}
-                  </motion.button>
-                  <motion.button
-                    onClick={() => handleDeleteEntry(entry.id)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="p-2 rounded bg-red-900 text-red-400"
-                    disabled={selectedEntry === entry.id}
-                  >
-                    <Trash2 size={16} />
-                  </motion.button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="badge">
+                    <Eye size={14} className="mr-1" />
+                    {entry.views || 0}
+                  </span>
+                  <span className="badge">
+                    <Heart size={14} className="mr-1" />
+                    {entry.likes || 0}
+                  </span>
                 </div>
               </div>
-              <p className="text-green-300 whitespace-pre-wrap">{entry.content}</p>
+
+              <p className="text-lg mb-6 whitespace-pre-wrap group-hover:text-primary transition-colors">
+                {entry.content}
+              </p>
+
+              <div className="flex items-center gap-4">
+                <motion.button
+                  onClick={() => handleTogglePublic(entry.id, entry.is_public)}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className={`emoji-button ${
+                    entry.is_public ? 'bg-success' : 'bg-error'
+                  }`}
+                  disabled={selectedEntry === entry.id}
+                >
+                  {entry.is_public ? <Check size={18} /> : <X size={18} />}
+                </motion.button>
+
+                <motion.button
+                  onClick={() => handleDeleteEntry(entry.id)}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="emoji-button bg-error"
+                  disabled={selectedEntry === entry.id}
+                >
+                  <Trash2 size={18} />
+                </motion.button>
+              </div>
             </motion.div>
           ))}
         </AnimatePresence>
